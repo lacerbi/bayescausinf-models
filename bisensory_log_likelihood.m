@@ -31,8 +31,9 @@ total_loglike = 0;
 for iNoise = 1:3
     
     theta = zeros(1,Nparams);
-    theta(1:2) = params(2*(iNoise-1)+(1:2));    
-    theta(3:end) = params(7:end);
+    theta(1:2) = params([iNoise,iNoise + 4]);
+    theta(3:4) = params([4,8]);    
+    theta(5:end) = params(9:end);
     llike{iNoise} = bisensory_log_likelihood_noise( ...
         theta,bimodal_counts{iNoise},bincenters_bim,grid_size,sum_flag);
         
@@ -62,9 +63,6 @@ alpha_rescaling_vis = 1;    % No sensory rescaling
 alpha_rescaling_vest = 1;
 beta_softmax = 1e4;     % Solves some numerical instabilities
 
-counts_all = sum(counts{2} + counts{3},2);
-idx_bins = counts_all > 0;
-
 % Sensory noise shape
 sigma_fun = @(s, sigmazero, w) sigmazero .* (1 + (90/pi)*abs(sin(s*pi/90)).*w);
 
@@ -73,7 +71,6 @@ lambda = theta(end-3);              % Lapse rate
 prior_mu = theta(end-2);            % Gaussian prior mean
 prior_sigma = exp(theta(end-1));    % Gaussian prior standard deviation
 priorc1 = theta(end);               % Probability of common cause (p_common)
-
 
 % Take model parameters
 sigmazero_vis = exp(theta(1));
@@ -106,8 +103,8 @@ xrange_vest (1, 1, :) = alpha_rescaling_vest*linspace(max(min(bincenters_vest-MA
 dx_vis = xrange_vis(1, 2, 1) - xrange_vis(1, 1, 1);
 dx_vest = xrange_vest(1, 1, 2) - xrange_vest(1, 1, 1);
 
-% Wrap large noisy measurement around circle
-wraparound = MAXRNG_XMEAS >= 180 && ...
+% Wrap large noisy measurement around circle?
+wraparound_flag = MAXRNG_XMEAS >= 180 && ...
         ( min(bincenters_vis-MAXSD*sigmas_vis) <= -180 || max(bincenters_vis+MAXSD*sigmas_vis) >= 180 || ...
         min(bincenters_vest-MAXSD*sigmas_vest) <= -180 || max(bincenters_vest+MAXSD*sigmas_vest) >= 180);
 
@@ -140,7 +137,7 @@ sigmasprime_vest = sigma_fun(likerange_vest,sigmalikezero_vest,wlike_vest);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Compute likelihood for non-Gaussian likelihoods
 
-if wraparound
+if wraparound_flag
     like_vis = bsxfun_normpdf(xrange_vis,srange,sigmasprime_vis) + ...
         bsxfun_normpdf(xrange_vis,srange + 360,sigmasprime_vis) + ...
         bsxfun_normpdf(xrange_vis,srange - 360,sigmasprime_vis);
@@ -174,8 +171,7 @@ likec1 = [];
 if priorc1 > 0
     if do_estimation
         [postright_c1(1,:,:),likec1(1,:,:)] = VestBMS_c1postandlikec1qtrapz(postpdf_c2, like_vis);
-        likec1 = likec1*ds + realmin;   % ADDED DS!
-        % likec1 = likec1 + realmin;
+        likec1 = likec1*ds + realmin;
     else
         postright_c1 = [];
     end
@@ -232,7 +228,6 @@ if do_unity
     else
         w1_unity = 1./(1 + ((1-w1)./w1).^beta_softmax);
     end
-    % w1_unity = w1;
 end
 
 if nargout > 1 % Save variables for debug or data generation
@@ -269,7 +264,7 @@ clear postright w1 postpdf_c2 postright_c1 postright_c2 ...
 % Marginalize over noisy measurements
 
 xpdf_vis = bsxfun_normpdf(xrange_vis, alpha_rescaling_vis*bincenters_vis,alpha_rescaling_vis*sigmas_vis);
-if wraparound
+if wraparound_flag
     xpdf_vis = xpdf_vis + ...
         bsxfun_normpdf(xrange_vis, alpha_rescaling_vis*bincenters_vis + 360,alpha_rescaling_vis*sigmas_vis) ...
         + bsxfun_normpdf(xrange_vis, alpha_rescaling_vis*bincenters_vis - 360,alpha_rescaling_vis*sigmas_vis);        
@@ -277,7 +272,7 @@ end
 xpdf_vis = bsxfun(@rdivide, xpdf_vis, qtrapz(xpdf_vis, 2)); % Not multiplying by volume element
 
 xpdf_vest = bsxfun_normpdf(xrange_vest, alpha_rescaling_vest*bincenters_vest,alpha_rescaling_vest*sigmas_vest);    
-if wraparound
+if wraparound_flag
     xpdf_vest = xpdf_vest + ...
         bsxfun_normpdf(xrange_vest, alpha_rescaling_vest*bincenters_vest + 360,alpha_rescaling_vest*sigmas_vest) ...
         + bsxfun_normpdf(xrange_vest, alpha_rescaling_vest*bincenters_vest - 360,alpha_rescaling_vest*sigmas_vest);        
