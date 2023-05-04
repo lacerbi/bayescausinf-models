@@ -1,21 +1,29 @@
-%BISENSORY_LOG_LIKELIHOOD Calculate (log) likelihood of bimodal dataset DATA
-% under parameter set THETA for binned responses.
+%BISENSORY_LOG_LIKELIHOOD Calculate (log) likelihood of bimodal dataset 
+% DATA under parameter set PARAMS.
 %
-% THETA is the parameter vector for the current condition. 
-% The values of THETA are:
-% THETA(1) sigmazero; THETA(2) szero; 
-% THETA(3) alpha (scaling factor); THETA(4) beta (shift factor); 
-% THETA(5) kappa (power-law); THETA(6) lambda (lapse rate).
+% The values of PARAMS are:
+% 1. Noise base standard deviation, visual (low noise) - log scale
+% 2. Noise base standard deviation, visual (medium noise) - log scale
+% 3. Noise base standard deviation, visual (high noise) - log scale
+% 4. Noise base standard deviation, vestibular - log scale
+% 5. Noise Weber's fraction, visual (low noise)
+% 6. Noise Weber's fraction, visual (medium noise)
+% 7. Noise Weber's fraction, visual (high noise)
+% 8. Noise Weber's fraction, vestibular
+% 9. Lapse rate (probability of random response)
+% 10. Gaussian prior mean
+% 11. Gaussian prior standard deviation (log scale)
+% 12. Probability of common cause (`p_common`)
 %
 % DATA is data matrix. Each row is a trial. 
 % For a given row, the columns contain data for:
-% X(1) Subject id (unused),
-% X(2) Number of trial (unused),
-% X(3) Task type (1 -, 2 Vestibular localisation, 3 Unity judgment)
-% X(4) Vestibular stimulus position (deg),
-% X(5) Visual stimulus position (deg),
-% X(6) Response (1 or -1 for right/left; 1 or 2 for yes/no unity),
-% X(7) Visual noise level (1 low, 2 med, 3 high).
+% 1. Subject id (unused),
+% 2. Number of trial (unused),
+% 3. Task type (1 -, 2 Vestibular localisation, 3 Unity judgment)
+% 4. Vestibular stimulus position (deg),
+% 5. Visual stimulus position (deg),
+% 6. Response (1 or -1 for right/left; 1 or 2 for yes/no unity),
+% 7. Visual noise level (1 low, 2 med, 3 high).
 %
 % ...
 function varargout = bisensory_log_likelihood(params,data,grid_size,sum_flag)
