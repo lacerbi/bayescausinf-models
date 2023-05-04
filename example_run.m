@@ -1,6 +1,6 @@
 %EXAMPLE_RUN Set up and run example maximum-likelihood estimation.
 
-id = 1; % Subject dataset (1-11)
+id = 11; % Subject dataset (1-11)
 data = csvread('bisensory_data.csv');   % Load data for all subjects
 data_subj = data(data(:,1) == id,:);    % Get the target subject data
 
@@ -19,7 +19,6 @@ fun = @(x) -bisensory_log_likelihood(x,data_subj);
 % Optimizer options
 options = bads('defaults');
 options.UncertaintyHandling = false;
-options.MaxFunEvals = 1;
 
 % Run multi-start optimization
 Nstarts = 3;
@@ -34,5 +33,5 @@ for i = 1:Nstarts
     else
         x0(i,:) = rand(1, numel(PLB)).*(PUB - PLB) + PLB; % Randomize
     end    
-    [x(i,:),nll(i)] = bads(fun, x0(i,:), LB, UB, LB, UB, [], options);
+    [x(i,:),nll(i)] = bads(fun, x0(i,:), LB, UB, PLB, PUB, [], options);
 end
