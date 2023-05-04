@@ -37,7 +37,6 @@ Nparams = 8; % Number of model parameters in a single noise condition
 
 total_loglike = 0;
 for iNoise = 1:3
-    
     theta = zeros(1,Nparams);
     theta(1:2) = params([iNoise,iNoise + 4]);
     theta(3:4) = params([4,8]);    
@@ -544,7 +543,7 @@ for iNoise = 1:num_noise
         if iType == 3
             responses = [1,2]; % Unity
         else
-            responses = [1,-1]; % Estimation
+            responses = [-1,1]; % Estimation
         end
         
         data_now = data(data(:,3) == iType & data(:,7) == iNoise, :);
