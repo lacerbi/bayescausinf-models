@@ -1,5 +1,9 @@
 # Models of visuo-vestibular Bayesian causal inference
 
+We provide here example files to easily run and test algorithms for fitting models of causal inference in multisensory perception (Acerbi et al., 2018).
+
+## Description of the files
+
 The file `bisensory_log_likelihood.m` computes the log-likelihood of a dataset `data` with model parameters `params`.
 
 These are Bayesian causal inference models of visuo-vestibular perception applied to bisensory data for both localization (left/right) and unity judgement, stored in the file `bisensory_data.csv`. The CSV file contains 11 subjects (indexed by the first column).
@@ -13,28 +17,28 @@ data_subj = data(data(:,1) == id,:);    % Get the target subject data
 
 The considered model has 12 parameters:
 
-1. Visual noise (low noise) - base standard deviation (log scale)
-2. Visual noise (low noise) - Weber's fraction
-3. Visual noise (medium noise) - base standard deviation (log scale)
-4. Visual noise (medium noise) - Weber's fraction
-5. Visual noise (high noise) - base standard deviation (log scale)
-6. Visual noise (high noise) - Weber's fraction
-7. Vestibular noise - base standard deviation (log scale)
-8. Vestibular noise - Weber's fraction
-9. Lapse rate
+1. Noise base standard deviation, visual modality (low noise condition) - log scale
+2. Noise base standard deviation, visual modality (medium noise condition) - log scale
+3. Noise base standard deviation, visual modality (high noise condition) - log scale
+4. Noise base standard deviation, vestibular modality - log scale
+5. Noise Weber's fraction - visual modality (low noise condition)
+6. Noise Weber's fraction - visual modality (medium noise condition)
+7. Noise Weber's fraction - visual modality (high noise condition)
+8. Noise Weber's fraction - vestibular modality
+9. Lapse rate (probability of random response)
 10. Gaussian prior mean
 11. Gaussian prior standard deviation (log scale)
 12. Probability of common cause (`p_common`)
 
-Bounds for the parameters are provided below:
+Bounds for the parameters are provided below (these are the same as Acerbi et al., 2018):
 ```
-LB = [zeros(1,8), 0 -45 log(5) 0];
-UB = [repmat([log(40),1], [1, 4]), 0.5 45 log(90) 1];
-PLB = [repmat([log(2),0.02], [1, 4]), 0.02 -10 log(10) 0.1];
-PUB = [repmat([log(20),0.3], [1, 4]), 0.2 10 log(45) 0.9];
+LB = [0.5*ones(1,4), zeros(1,4), 0 -90 log(5) 0];
+UB = [log(80)*ones(1,4), ones(1,4), 1 90 log(180) 1];
+PLB = [log(1)*ones(1,4), 0.05*ones(1,4), 0.01 -5 log(4) 0.1];
+PUB = [log(40)*ones(1,4), 0.5*ones(1,4), 0.2 5 log(90) 0.9];
 ```
 
-The file `example_run.m` runs a maximum-likelihood optimization with BADS.
+The file `example_run.m` runs a multi-start maximum-likelihood optimization with [BADS](https://github.com/acerbilab/bads).
 
 ### Acknowledgments and references
 
