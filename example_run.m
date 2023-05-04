@@ -5,7 +5,7 @@ data = csvread('bisensory_data.csv');   % Load data for all subjects
 data_subj = data(data(:,1) == id,:);    % Get the target subject data
 
 % Define parameter bounds
-LB = [log(0.5)*ones(1,4), zeros(1,4), 0 -90 log(2) 0];
+LB = [log(0.5)*ones(1,4), zeros(1,4), 0 -90 log(1) 0];
 UB = [log(80)*ones(1,4), ones(1,4), 1 90 log(180) 1];
 PLB = [log(1)*ones(1,4), 0.05*ones(1,4), 0.01 -5 log(4) 0.1];
 PUB = [log(40)*ones(1,4), 0.5*ones(1,4), 0.2 5 log(90) 0.9];
@@ -35,3 +35,29 @@ for i = 1:Nstarts
     end    
     [x(i,:),nll(i)] = bads(fun, x0(i,:), LB, UB, PLB, PUB, [], options);
 end
+
+% Temporary best results
+% id = 11; x = [];
+
+[idx,~] = min(nll);
+x_best = x(idx,:);
+
+%% Run Bayesian inference on all subjects
+
+for id = 1:11
+    data_subj = data(data(:,1) == id,:);    % Get the target subject data
+
+    % Target function: log-joint for chosen dataset, with uniform prior
+    log_prior = -sum(log(UB - LB));
+    fun = @(x) bisensory_log_likelihood(x,data_subj) + log_prior;
+
+    x0v = 0.5*(PLB + PUB);
+    
+    vbmc_options = vbmc('defaults');
+    vbmc_options.MaxFunEvals = 1;
+    [vp{id},elbo(id),elbo_sd(id),exitflag(id),output{id}] = ...
+        vbmc(fun,x0v,LB,UB,PLB,PUB,vbmc_options);    
+    
+end
+
+
