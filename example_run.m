@@ -1,7 +1,7 @@
 %EXAMPLE_RUN Set up and run example maximum-likelihood estimation.
 
 % Use parametric Gaussian prior or semiparametric prior?
-gaussian_prior = false;
+gaussian_prior = true;
 
 id = 11; % Subject dataset (1-11)
 data = csvread('bisensory_data.csv');   % Load data for all subjects

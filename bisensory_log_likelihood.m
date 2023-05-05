@@ -15,6 +15,10 @@
 % 11. Gaussian prior mean
 % 12. Gaussian prior standard deviation (log scale)
 %
+% Alternatively, PARAMS can be a 21-element vector where the parameters
+% from 12 to 21 are log differences in log prior density on a fixed
+% pivot grid.
+%
 % DATA is data matrix. Each row is a trial. 
 % For a given row, the columns contain data for:
 % 1. Subject id (unused),
@@ -25,40 +29,45 @@
 % 6. Response (1 or -1 for right/left; 1 or 2 for yes/no unity),
 % 7. Visual noise level (1 low, 2 med, 3 high).
 %
-% ...
-function varargout = bisensory_log_likelihood(params,data,grid_size,sum_flag)
+% SUM_FLAG is an optional boolean flag. If TRUE (default), the function 
+% returns the total(summed) log likelihood. If FALSE, it returns a vector 
+% of log-likelihoods per trial.
+%
+% GRID_SIZE is an optional scalar integer, specifying the number of points
+% used for numerical integratio (default GRID_SIZE = 401).
+function varargout = bisensory_log_likelihood(params,data,sum_flag,grid_size)
 
-if nargin < 3 || isempty(grid_size) || isnan(grid_size); grid_size = 401; end
-if nargin < 4 || isempty(sum_flag); sum_flag = true; end
+if nargin < 3 || isempty(sum_flag); sum_flag = true; end
+if nargin < 4 || isempty(grid_size) || ~isfinite(grid_size); grid_size = 401; end
 
 bincenters = [-45,-40,-35,-30:2.5:-2.5,-1.25:0.625:1.25,2.5:2.5:30,35,40,45]';
-[bimodal_counts, bincenters_bim] = data2counts(data,bincenters);
+[bimodal_counts, bimodal_idx, bincenters_bim] = data2counts(data,bincenters);
 Nparams = numel(params)-4; % Number of model parameters in a single noise condition
 
-total_loglike = 0;
 for iNoise = 1:3
     theta = zeros(1,Nparams);
     theta(1:2) = params([iNoise,iNoise + 4]);
     theta(3:4) = params([4,8]);    
     theta(5:end) = params(9:end);
-    llike{iNoise} = bisensory_log_likelihood_noise( ...
-        theta,bimodal_counts{iNoise},bincenters_bim,grid_size,sum_flag);
-        
-    if sum_flag
-        total_loglike = total_loglike + llike{iNoise};
-    else
-        error('Individual likelihoods not supported yet.');
-    end
+    [llike{iNoise},prmat{iNoise},prmat_unity{iNoise}] = bisensory_log_likelihood_noise( ...
+        theta,bimodal_counts{iNoise},bincenters_bim,grid_size);
 end
 
-varargout{1} = total_loglike;
-
+if sum_flag
+    total_loglike = 0;
+    for iNoise = 1:3; total_loglike = total_loglike + llike{iNoise}; end
+    varargout{1} = total_loglike;
+else
+    prob_vec = reallocate_prob_vec(data,bincenters_bim,bimodal_idx,prmat,prmat_unity);
+    varargout{1} = log(prob_vec);
 end
 
+end
 %--------------------------------------------------------------------------
-function varargout = bisensory_log_likelihood_noise(theta,counts,bincenters,grid_size,sum_flag)
+function [ll,prmat,prmat_unity,extras] = bisensory_log_likelihood_noise(theta,counts,bincenters,grid_size)
 
 DEBUG = 0;  % Plot some debug graphs
+extras = [];
 
 % Fixed parameters
 MAXSD = 5;              % When integrating a Gaussian, go up to this SDs away
@@ -136,7 +145,7 @@ wraparound_flag = MAXRNG_XMEAS >= 180 && ...
         ( min(bincenters_vis-MAXSD*sigmas_vis) <= -180 || max(bincenters_vis+MAXSD*sigmas_vis) >= 180 || ...
         min(bincenters_vest-MAXSD*sigmas_vest) <= -180 || max(bincenters_vest+MAXSD*sigmas_vest) >= 180);
 
-if nargout > 1 % Save variables for debug or data generation
+if nargout > 3 % Save variables for debug or data generation
     extras.xrange_vis = xrange_vis;
     extras.xrange_vest = xrange_vest;
     extras.srange = srange;
@@ -201,7 +210,7 @@ else
     postright_c1 = 0;
 end
 
-if nargout > 1 
+if nargout > 3 
     extras.postright_c1 = postright_c1; 
     extras.postright_c2 = postright_c2;    
 end
@@ -252,7 +261,7 @@ if do_unity
     end
 end
 
-if nargout > 1 % Save variables for debug or data generation
+if nargout > 3 % Save variables for debug or data generation
     extras.w1 = w1;
     % extras.postpdfc1 = postpdfc1;
 end
@@ -327,33 +336,64 @@ prmat_unity = min(max(prmat_unity,0),1);
 prmat = lambda/2 + (1-lambda)*prmat;
 prmat_unity = lambda/2 + (1-lambda)*prmat_unity;
 
-[ll,extras] = finalize(prmat,prmat_unity,counts,FIXEDLAPSEPDF,nargout > 1,sum_flag);
-varargout{1} = ll;
-if nargout > 1; varargout{2} = extras; end
+[ll,prmat,prmat_unity,extras] = finalize(prmat,prmat_unity,counts,FIXEDLAPSEPDF,extras);
 
 end
 
 %--------------------------------------------------------------------------
-function [ll,extras] = finalize(prmat,prmat_unity,counts,epsilon,extras_flag,sum_flag)
+function [ll,prmat,prmat_unity,extras] = finalize(prmat,prmat_unity,counts,epsilon,extras)
 %FINALIZE Finalize log likelihood
 
 prmat = 0.5*epsilon + (1-epsilon)*prmat;
 prmat_unity = 0.5*epsilon + (1-epsilon)*prmat_unity;
 
-if extras_flag
+if ~isempty(extras)
     extras.responsepdf = prmat;
     extras.responsepdf_unity = prmat_unity;
 else
     extras = [];
 end
 
-prmat = [prmat(:); prmat_unity(:)];
+prmat_flattened = [prmat(:); prmat_unity(:)];
 xx = [counts{1}(:); counts{2}(:); counts{3}(:)];
 
-if sum_flag
-    ll = sum(xx.*log(prmat));
-else
-    ll = loglikmat2vec(log(prmat),xx);
+ll = sum(xx.*log(prmat_flattened));
+
+end
+%--------------------------------------------------------------------------
+function prob_vec = reallocate_prob_vec(data,bincenters_bim,bimodal_idx,prmat,prmat_unity)
+%REALLOCATE_PROB_VEC Assign back the probability to each trial.
+
+prob_vec = zeros(size(data,1),1);
+
+for iNoise = 1:3
+    for iType = 2:3
+        idx = bimodal_idx{iNoise}{iType};
+        idx_n = find(idx);
+
+        switch iType
+            case 2
+                for i = 1:numel(idx_n)
+                    datarow = data(idx_n(i),:);
+                    idxbin = (datarow(5) == bincenters_bim{1} & datarow(4) == bincenters_bim{2});
+                    if datarow(6) == -1
+                        prob_vec(idx_n(i)) = prmat{iNoise}(idxbin,1);
+                    else
+                        prob_vec(idx_n(i)) = prmat{iNoise}(idxbin,2);
+                    end
+                end                    
+            case 3                    
+                for i = 1:numel(idx_n)
+                    datarow = data(idx_n(i),:);
+                    idxbin = (datarow(5) == bincenters_bim{1} & datarow(4) == bincenters_bim{2});
+                    if datarow(6) == 1
+                        prob_vec(idx_n(i)) = prmat_unity{iNoise}(idxbin,1);                    
+                    else
+                        prob_vec(idx_n(i)) = prmat_unity{iNoise}(idxbin,2);                        
+                    end
+                end
+        end
+    end
 end
 
 end
@@ -539,7 +579,7 @@ end
 
 end
 %--------------------------------------------------------------------------
-function [bimodal_counts,bincenters_bim] = data2counts(data,bincenters)
+function [bimodal_counts,bimodal_idx,bincenters_bim] = data2counts(data,bincenters)
 %DATA2COUNTS Bin bimodal data
 % Prepare stimulus/response bin counts
 
@@ -554,6 +594,8 @@ xmat_tot = zeros(binmeshLength,1);
 
 for iNoise = 1:num_noise
     bimodal_counts{iNoise}{1} = [];
+    bimodal_idx{iNoise}{1} = [];
+    
     for iType = 2:3
         if iType == 3
             responses = [1,2]; % Unity
@@ -561,7 +603,8 @@ for iNoise = 1:num_noise
             responses = [-1,1]; % Estimation
         end
         
-        data_now = data(data(:,3) == iType & data(:,7) == iNoise, :);
+        idx = data(:,3) == iType & data(:,7) == iNoise;
+        data_now = data(idx, :);
         
         xmat = zeros(binmeshLength,numel(responses));
         for iBin = 1:binmeshLength
@@ -573,6 +616,7 @@ for iNoise = 1:num_noise
         end
         xmat_tot = xmat_tot + sum(xmat,2);
         bimodal_counts{iNoise}{iType} = xmat;
+        bimodal_idx{iNoise}{iType} = idx;
     end
 end
 
