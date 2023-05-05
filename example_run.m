@@ -20,10 +20,10 @@ if ~gaussian_prior
     PLB_prior = max(log(1e-2),log(-diff(-0.5*(s_pivot/90).^2)));
     PUB_prior = max(log(1),log(-diff(-0.5*(s_pivot/10).^2)));
     UB_prior = max(log(10),log(-diff(-0.5*(s_pivot/4).^2)));    
-    LB = [LB(1:end-1),LB_prior];
-    PLB = [PLB(1:end-1),PLB_prior];
-    PUB = [PUB(1:end-1),PUB_prior];
-    UB = [UB(1:end-1),UB_prior];
+    LB = [LB(1:11),LB_prior];
+    PLB = [PLB(1:11),PLB_prior];
+    PUB = [PUB(1:11),PUB_prior];
+    UB = [UB(1:11),UB_prior];
 end
 
 Np = numel(PLB);    % Number of model parameters
