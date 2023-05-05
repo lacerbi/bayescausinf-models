@@ -45,10 +45,10 @@ The considered model has 12 parameters (elements of `params` array):
 
 Bounds for the parameters are provided below (these are the same as Acerbi et al., 2018):
 ```
-LB = [log(0.5)*ones(1,4), zeros(1,4), 0 -90 log(1) 0];
-UB = [log(80)*ones(1,4), ones(1,4), 1 90 log(180) 1];
-PLB = [log(1)*ones(1,4), 0.05*ones(1,4), 0.01 -5 log(4) 0.1];
-PUB = [log(40)*ones(1,4), 0.5*ones(1,4), 0.2 5 log(90) 0.9];
+LB = [log(0.5)*ones(1,4), zeros(1,4), 0 0, -90 log(1)];
+UB = [log(80)*ones(1,4), ones(1,4), 1 1, 90 log(180)];
+PLB = [log(1)*ones(1,4), 0.05*ones(1,4), 0.01 0.1, -5 log(4)];
+PUB = [log(40)*ones(1,4), 0.5*ones(1,4), 0.2 0.9, 5 log(90)];
 ```
 
 ### Example files
