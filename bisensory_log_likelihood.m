@@ -33,7 +33,7 @@ if nargin < 4 || isempty(sum_flag); sum_flag = true; end
 
 bincenters = [-45,-40,-35,-30:2.5:-2.5,-1.25:0.625:1.25,2.5:2.5:30,35,40,45]';
 [bimodal_counts, bincenters_bim] = data2counts(data,bincenters);
-Nparams = 8; % Number of model parameters in a single noise condition
+Nparams = numel(params)-4; % Number of model parameters in a single noise condition
 
 total_loglike = 0;
 for iNoise = 1:3
@@ -70,14 +70,35 @@ alpha_rescaling_vis = 1;    % No sensory rescaling
 alpha_rescaling_vest = 1;
 beta_softmax = 1e4;     % Solves some numerical instabilities
 
+% Stimulus range
+srange = linspace(-MAXRNG, MAXRNG, MAXRNG*SSCALE*2 + 1)';
+ds = diff(srange(1:2));
+
 % Sensory noise shape
 sigma_fun = @(s, sigmazero, w) sigmazero .* (1 + (90/pi)*abs(sin(s*pi/90)).*w);
 
 % Model parameters
-lambda = theta(9);               % Lapse rate
-priorc1 = theta(10);             % Probability of common cause (p_common)
-prior_mu = theta(11);            % Gaussian prior mean
-prior_sigma = exp(theta(12));    % Gaussian prior standard deviation
+lambda = theta(5);               % Lapse rate
+priorc1 = theta(6);             % Probability of common cause (p_common)
+prior_mu = theta(7);            % Prior mean
+
+% Are we using a parametric Gaussian prior or semiparametric?
+gaussian_prior_flag = (numel(theta) == 8);
+
+% Compute UNCORRELATED prior, p(s)
+if gaussian_prior_flag
+    prior_sigma = exp(theta(8));    % Gaussian prior standard deviation
+    priorpdf1d = bsxfun_normpdf(srange,prior_mu,prior_sigma);
+else
+    % Semi-parametric prior, defined on a grid of pivots
+    s_pivot = [0,1,2.5,5,10,15,25,35,45,60,MAXRNG];
+    s_pivot_full = [-fliplr(s_pivot(2:end)), s_pivot] + prior_mu;
+    num_pivots = numel(s_pivot) - 1; % = 10
+    prior_pivots = cumsum([0,-exp(theta(7+(1:num_pivots)))]); % monotonically decreasing
+    prior_pivots = [fliplr(prior_pivots(2:end)), prior_pivots]; % the pivot at s=0 is always 0
+    priorpdf1d = exp(interp1(s_pivot_full, prior_pivots, srange, 'pchip'));
+end
+priorpdf1d = priorpdf1d/(qtrapz(priorpdf1d, 1)*ds); % Normalize prior
 
 % Take model parameters
 sigmazero_vis = exp(theta(1));
@@ -114,9 +135,6 @@ dx_vest = xrange_vest(1, 1, 2) - xrange_vest(1, 1, 1);
 wraparound_flag = MAXRNG_XMEAS >= 180 && ...
         ( min(bincenters_vis-MAXSD*sigmas_vis) <= -180 || max(bincenters_vis+MAXSD*sigmas_vis) >= 180 || ...
         min(bincenters_vest-MAXSD*sigmas_vest) <= -180 || max(bincenters_vest+MAXSD*sigmas_vest) >= 180);
-
-srange = linspace(-MAXRNG, MAXRNG, MAXRNG*SSCALE*2 + 1)';
-ds = diff(srange(1:2));
 
 if nargout > 1 % Save variables for debug or data generation
     extras.xrange_vis = xrange_vis;
@@ -156,9 +174,6 @@ else
     like_vest = bsxfun_normpdf(xrange_vest,srange,sigmasprime_vest);
 end
 
-% Compute UNCORRELATED prior, p(s)
-priorpdf1d = bsxfun_normpdf(srange,prior_mu,prior_sigma);
-priorpdf1d = priorpdf1d/(qtrapz(priorpdf1d, 1)*ds); % Normalize prior
 
 % Compute unnormalized posterior and rightward posterior (C = 2)
 postpdf_c2 = bsxfun(@times, priorpdf1d, like_vest);

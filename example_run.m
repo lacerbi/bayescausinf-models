@@ -1,14 +1,31 @@
 %EXAMPLE_RUN Set up and run example maximum-likelihood estimation.
 
+% Use parametric Gaussian prior or semi-parametric prior?
+gaussian_prior = false;
+
 id = 11; % Subject dataset (1-11)
 data = csvread('bisensory_data.csv');   % Load data for all subjects
 data_subj = data(data(:,1) == id,:);    % Get the target subject data
 
-% Define parameter bounds
+%% Define parameter bounds
 LB = [log(0.5)*ones(1,4), zeros(1,4), 0 0, -90 log(1)];
 UB = [log(80)*ones(1,4), ones(1,4), 1 1, 90 log(180)];
 PLB = [log(1)*ones(1,4), 0.05*ones(1,4), 0.01 0.1, -5 log(4)];
 PUB = [log(40)*ones(1,4), 0.5*ones(1,4), 0.2 0.9, 5 log(90)];
+
+if ~gaussian_prior
+    s_pivot = [0,1,2.5,5,10,15,25,35,45,60,90];
+    num_pivots = numel(s_pivot) - 1;
+    LB_prior = log(1e-3)*ones(1,num_pivots);
+    PLB_prior = max(log(1e-2),log(-diff(-0.5*(s_pivot/90).^2)));
+    PUB_prior = max(log(1),log(-diff(-0.5*(s_pivot/10).^2)));
+    UB_prior = max(log(10),log(-diff(-0.5*(s_pivot/4).^2)));    
+    LB = [LB(1:end-1),LB_prior];
+    PLB = [PLB(1:end-1),PLB_prior];
+    PUB = [PUB(1:end-1),PUB_prior];
+    UB = [UB(1:end-1),UB_prior];
+end
+
 Np = numel(PLB);    % Number of model parameters
 
 %% Run maximum-likelihood estimation
@@ -58,5 +75,3 @@ for id = 1:11
     [vp{id},elbo(id),elbo_sd(id),exitflag(id),output{id}] = ...
         vbmc(fun,x0v,LB,UB,PLB,PUB,vbmc_options);
 end
-
-
