@@ -6,6 +6,8 @@ We provide here example files to easily run and test algorithms for fitting mode
 
 The file `bisensory_log_likelihood.m` computes the log-likelihood of a dataset `data` with model parameters `params`.
 
+By default, `bisensory_log_likelihood` returns the log-likelihood of the entire dataset. The third optional parameter (`sum_flag`) can be set to `false`, in which case the function returns a vector of log-likelihoods per trial.
+
 ### Data
 
 The data are bisensory (visuo-vestibular) datasets for both localization (left/right) and unity judgement, stored in the file `bisensory_data.csv`. The CSV file contains 11 subjects (indexed by the first column).
