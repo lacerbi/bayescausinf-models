@@ -31,7 +31,7 @@ data_subj = data(data(:,1) == id,:);    % Get the target subject data
 
 The model implemented is a Bayesian causal inference observer model of multisensory perception with stimulus-dependent noise, which induces non-Gaussian likelihoods for the observer's sensory measurements. The Bayesian observer's posterior is computed via numerical integration.
 
-At the moment, `bisensory_log_likelihood.m` implements two different models for the observer's prior:
+At the moment, `bisensory_log_likelihood` implements two different models for the observer's prior:
 - The first model is a standard Gaussian prior (12 parameters in total).
 - The second model is a semiparametric prior, defined on a grid of pivots (21 parameters in total).
 
