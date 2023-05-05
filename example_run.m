@@ -1,6 +1,6 @@
 %EXAMPLE_RUN Set up and run example maximum-likelihood estimation.
 
-% Use parametric Gaussian prior or semi-parametric prior?
+% Use parametric Gaussian prior or semiparametric prior?
 gaussian_prior = false;
 
 id = 11; % Subject dataset (1-11)
