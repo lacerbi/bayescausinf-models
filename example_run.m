@@ -5,10 +5,10 @@ data = csvread('bisensory_data.csv');   % Load data for all subjects
 data_subj = data(data(:,1) == id,:);    % Get the target subject data
 
 % Define parameter bounds
-LB = [log(0.5)*ones(1,4), zeros(1,4), 0 -90 log(1) 0];
-UB = [log(80)*ones(1,4), ones(1,4), 1 90 log(180) 1];
-PLB = [log(1)*ones(1,4), 0.05*ones(1,4), 0.01 -5 log(4) 0.1];
-PUB = [log(40)*ones(1,4), 0.5*ones(1,4), 0.2 5 log(90) 0.9];
+LB = [log(0.5)*ones(1,4), zeros(1,4), 0 0, -90 log(1)];
+UB = [log(80)*ones(1,4), ones(1,4), 1 1, 90 log(180)];
+PLB = [log(1)*ones(1,4), 0.05*ones(1,4), 0.01 0.1, -5 log(4)];
+PUB = [log(40)*ones(1,4), 0.5*ones(1,4), 0.2 0.9, 5 log(90)];
 Np = numel(PLB);    % Number of model parameters
 
 %% Run maximum-likelihood estimation
@@ -54,10 +54,9 @@ for id = 1:11
     x0v = 0.5*(PLB + PUB);
     
     vbmc_options = vbmc('defaults');
-    vbmc_options.MaxFunEvals = 1;
+    vbmc_options.MaxFunEvals = 700; % Default (100 + 50*nvars)
     [vp{id},elbo(id),elbo_sd(id),exitflag(id),output{id}] = ...
-        vbmc(fun,x0v,LB,UB,PLB,PUB,vbmc_options);    
-    
+        vbmc(fun,x0v,LB,UB,PLB,PUB,vbmc_options);
 end
 
 

@@ -11,9 +11,9 @@
 % 7. Noise Weber's fraction, visual (high noise)
 % 8. Noise Weber's fraction, vestibular
 % 9. Lapse rate (probability of random response)
-% 10. Gaussian prior mean
-% 11. Gaussian prior standard deviation (log scale)
-% 12. Probability of common cause (`p_common`)
+% 10. Probability of common cause (`p_common`)
+% 11. Gaussian prior mean
+% 12. Gaussian prior standard deviation (log scale)
 %
 % DATA is data matrix. Each row is a trial. 
 % For a given row, the columns contain data for:
@@ -74,10 +74,10 @@ beta_softmax = 1e4;     % Solves some numerical instabilities
 sigma_fun = @(s, sigmazero, w) sigmazero .* (1 + (90/pi)*abs(sin(s*pi/90)).*w);
 
 % Model parameters
-lambda = theta(end-3);              % Lapse rate
-prior_mu = theta(end-2);            % Gaussian prior mean
-prior_sigma = exp(theta(end-1));    % Gaussian prior standard deviation
-priorc1 = theta(end);               % Probability of common cause (p_common)
+lambda = theta(9);               % Lapse rate
+priorc1 = theta(10);             % Probability of common cause (p_common)
+prior_mu = theta(11);            % Gaussian prior mean
+prior_sigma = exp(theta(12));    % Gaussian prior standard deviation
 
 % Take model parameters
 sigmazero_vis = exp(theta(1));
