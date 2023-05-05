@@ -39,9 +39,9 @@ The considered model has 12 parameters (elements of `params` array):
 7. Noise Weber's fraction, visual modality (high noise condition)
 8. Noise Weber's fraction, vestibular modality
 9. Lapse rate (probability of random response)
-10. Gaussian prior mean
-11. Gaussian prior standard deviation (log scale)
-12. Probability of common cause (`p_common`)
+10. Probability of common cause (`p_common`)
+11. Gaussian prior mean
+12. Gaussian prior standard deviation (log scale)
 
 Bounds for the parameters are provided below (these are the same as Acerbi et al., 2018):
 ```
