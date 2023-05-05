@@ -33,9 +33,9 @@ At the moment, `bisensory_log_likelihood.m` implements two different models for 
 - The first model is a standard Gaussian prior (12 parameters in total).
 - The second model is a semiparametric prior, defined on a grid of pivots (21 parameters in total).
 
-The 
+The function distinguishes between the two models based on the number of elements of the `params` array.
 
-#### Gaussian prior model
+#### Gaussian prior model (12 parameters)
 
 The considered observer model has 12 parameters in total (elements of `params` array):
 
@@ -60,15 +60,15 @@ PLB = [log(1)*ones(1,4), 0.05*ones(1,4), 0.01 0.1, -5 log(4)];
 PUB = [log(40)*ones(1,4), 0.5*ones(1,4), 0.2 0.9, 5 log(90)];
 ```
 
-#### Semiparametric prior model
+#### Semiparametric prior model (21 parameters)
 
-This model has 21 parameters in total. The first 11 parameters have the same meaning as above (where the 11th parameter is the prior mean).
-Then the model has 10 further parameters which encode differences in the log-density of the prior, evaluated on a grid.
+This model has 21 parameters in total. The first 11 parameters have the same meaning as the basic model defined above (where the 11th parameter is the prior mean).
+Then the model has 10 further parameters which encode differences in the log-density of the prior, evaluated on a pre-specified pivot grid.
 The prior is assumed to be symmetric around the mean and monotonically decreasing from the mean (although it can be near-flat).
 
-Code to define the parameters bounds is provided below:
+Code to define the parameters bounds is provided below, to add to the code previously provided for the Gaussian prior model:
 ```
-% Define LB, UB, PLB, PUB for the Gaussian prior model, as above
+% LB, UB, PLB, PUB have been defined before
 s_pivot = [0,1,2.5,5,10,15,25,35,45,60,90];
 num_pivots = numel(s_pivot) - 1;
 LB_prior = log(1e-3)*ones(1,num_pivots);
